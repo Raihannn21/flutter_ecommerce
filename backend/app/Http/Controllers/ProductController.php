@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Product;
 use Illuminate\Http\Request;
-use Illuminate\Http\JsonResponse; // Tambahkan ini
+use Illuminate\Http\JsonResponse; // Pastikan ini di-import
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log; // Jika masih perlu debugging, bisa dipertahankan
 
@@ -15,13 +15,26 @@ class ProductController extends Controller
      * Endpoint: GET /api/products
      * Akses: Publik (User & Admin)
      */
-    public function index(Request $request): JsonResponse // Ubah return type ke JsonResponse
+    public function index(Request $request): JsonResponse
     {
-        $products = Product::all();
+        // <<<<<<<<<< PERBAIKAN DI SINI UNTUK PAGINATION
+        $perPage = $request->query('per_page', 20); // Ambil per_page dari query param, default 20 produk per halaman
+        $products = Product::paginate($perPage); // Gunakan paginate()
+
+        // Mengembalikan respons JSON dengan data produk dan metadata pagination
         return response()->json([
             'message' => 'Products retrieved successfully.',
-            'data' => $products
+            'data' => $products->items(), // Mengambil hanya item data dari paginator
+            'pagination' => [ // Menambahkan metadata pagination
+                'total' => $products->total(),
+                'per_page' => $products->perPage(),
+                'current_page' => $products->currentPage(),
+                'last_page' => $products->lastPage(),
+                'from' => $products->firstItem(),
+                'to' => $products->lastItem(),
+            ]
         ], 200);
+        // <<<<<<<<<< AKHIR PERBAIKAN
     }
 
     /**
@@ -29,7 +42,7 @@ class ProductController extends Controller
      * Endpoint: POST /api/admin/products
      * Akses: Admin Saja
      */
-    public function store(Request $request): JsonResponse // Ubah return type ke JsonResponse
+    public function store(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
             'product_id' => 'required|integer|unique:products,product_id',
@@ -60,15 +73,14 @@ class ProductController extends Controller
      * Endpoint: GET /api/products/{id}
      * Akses: Publik (User & Admin)
      */
-    public function show(string $id): JsonResponse // Mengambil ID dari URL
+    public function show(string $id): JsonResponse
     {
-        // Cari produk berdasarkan product_id (karena ini primaryKey)
         $product = Product::find($id);
 
         if (!$product) {
             return response()->json([
                 'message' => 'Product not found.'
-            ], 404); // Kode status HTTP 404 Not Found
+            ], 404);
         }
 
         return response()->json([
@@ -92,10 +104,8 @@ class ProductController extends Controller
             ], 404);
         }
 
-        // Validasi input untuk update. product_id tidak perlu unik lagi kecuali jika diubah.
         $validator = Validator::make($request->all(), [
-            // 'product_id' => 'sometimes|integer|unique:products,product_id,'.$id.',product_id', // Jika product_id bisa diubah
-            'gender_id' => 'sometimes|integer|exists:genders,id', // 'sometimes' berarti opsional
+            'gender_id' => 'sometimes|integer|exists:genders,id',
             'product_type_id' => 'sometimes|integer|exists:product_types,id',
             'colour_id' => 'sometimes|integer|exists:colours,id',
             'usage_id' => 'sometimes|integer|exists:usages,id',
@@ -110,9 +120,7 @@ class ProductController extends Controller
             ], 422);
         }
 
-        // Update produk dengan data yang valid
-        $product->update($request->all()); // Menggunakan $request->all() karena sudah divalidasi
-
+        $product->update($request->all());
         return response()->json([
             'message' => 'Product updated successfully.',
             'data' => $product
@@ -138,6 +146,6 @@ class ProductController extends Controller
 
         return response()->json([
             'message' => 'Product deleted successfully.'
-        ], 200); // Kode status HTTP 200 OK
+        ], 200);
     }
 }
