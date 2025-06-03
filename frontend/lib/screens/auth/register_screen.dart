@@ -41,9 +41,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
       }
 
       if (response['success']) {
+        // ignore: use_build_context_synchronously
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Registration successful!')),
         );
+        // ignore: use_build_context_synchronously
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const LoginScreen()),
@@ -55,6 +57,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             errorMessage += '\n${value[0]}';
           });
         }
+        // ignore: use_build_context_synchronously
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(errorMessage)),
         );

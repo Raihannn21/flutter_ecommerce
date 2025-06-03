@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:frontend/models/product.dart'; // Import Product model jika ada
+import 'package:frontend/models/product.dart';
 
 class AdminProductFormScreen extends StatelessWidget {
-  final Product? product; // Bisa null jika menambah produk baru
+  final Product? product;
 
   const AdminProductFormScreen({super.key, this.product});
 
@@ -11,7 +11,7 @@ class AdminProductFormScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text(product == null ? 'Add New Product' : 'Edit Product'),
-        backgroundColor: Colors.red[700], // Warna khusus admin
+        backgroundColor: Colors.red[700],
       ),
       body: Center(
         child: Text(

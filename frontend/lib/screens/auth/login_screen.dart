@@ -1,12 +1,13 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:frontend/services/auth_service.dart'; // Import AuthService
-import 'package:frontend/screens/auth/register_screen.dart'; // Untuk navigasi ke Register
-import 'package:frontend/screens/home/home_screen.dart'; // Untuk Home Screen
-import 'package:shared_preferences/shared_preferences.dart'; // Untuk penyimpanan token
-import 'package:flutter/foundation.dart'; // Untuk kDebugMode
-import 'package:frontend/models/user.dart'; // <<<<<<<<<< PENTING: Tambahkan ini
+import 'package:frontend/services/auth_service.dart';
+import 'package:frontend/screens/auth/register_screen.dart';
+import 'package:frontend/screens/home/home_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/foundation.dart';
+// ignore: unused_import
+import 'package:frontend/models/user.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -50,6 +51,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (response['success']) {
         // Login berhasil
+        // ignore: use_build_context_synchronously
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Login successful!')),
         );
@@ -88,9 +90,9 @@ class _LoginScreenState extends State<LoginScreen> {
                 'Token or User object is null/empty from login response. Cannot save.');
           }
         }
-        // <<<<<<<<<< AKHIR PERBAIKAN LOGIKA
 
         // Navigasi ke halaman utama setelah login (HomeScreen)
+        // ignore: use_build_context_synchronously
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const HomeScreen()),
@@ -103,6 +105,7 @@ class _LoginScreenState extends State<LoginScreen> {
             errorMessage += '\n${value[0]}';
           });
         }
+        // ignore: use_build_context_synchronously
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(errorMessage)),
         );

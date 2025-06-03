@@ -1,4 +1,3 @@
-// lib/models/product.dart
 class Product {
   final int productId;
   final int genderId;
@@ -7,8 +6,8 @@ class Product {
   final int usageId;
   final String title;
   final String imageUrl;
-  final DateTime? createdAt; // <<<<<< PERBAIKAN: Jadikan nullable
-  final DateTime? updatedAt; // <<<<<< PERBAIKAN: Jadikan nullable
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
 
   Product({
     required this.productId,
@@ -18,11 +17,10 @@ class Product {
     required this.usageId,
     required this.title,
     required this.imageUrl,
-    required this.createdAt, // Hapus 'required' jika ingin opsional, tapi tetap di constructor
-    required this.updatedAt, // Hapus 'required' jika ingin opsional, tapi tetap di constructor
+    required this.createdAt,
+    required this.updatedAt,
   });
 
-  // Factory method untuk membuat objek Product dari JSON
   factory Product.fromJson(Map<String, dynamic> json) {
     return Product(
       productId: json['product_id'] as int,
@@ -32,14 +30,12 @@ class Product {
       usageId: json['usage_id'] as int,
       title: json['title'] as String,
       imageUrl: json['image_url'] as String,
-      // <<<<<< PERBAIKAN: Penanganan null
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'] as String)
           : null,
       updatedAt: json['updated_at'] != null
           ? DateTime.parse(json['updated_at'] as String)
           : null,
-      // <<<<<< AKHIR PERBAIKAN
     );
   }
 
@@ -53,10 +49,8 @@ class Product {
       'usage_id': usageId,
       'title': title,
       'image_url': imageUrl,
-      'created_at': createdAt
-          ?.toIso8601String(), // Gunakan operator '?' untuk null safety
-      'updated_at': updatedAt
-          ?.toIso8601String(), // Gunakan operator '?' untuk null safety
+      'created_at': createdAt?.toIso8601String(),
+      'updated_at': updatedAt?.toIso8601String(),
     };
   }
 }

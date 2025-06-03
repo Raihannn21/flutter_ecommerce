@@ -1,4 +1,3 @@
-// lib/models/user.dart
 class User {
   final int id;
   final String name;
@@ -42,5 +41,5 @@ class User {
     };
   }
 
-  bool get isAdmin => role == 'admin'; // Getter helper untuk cek role admin
+  bool get isAdmin => role == 'admin';
 }

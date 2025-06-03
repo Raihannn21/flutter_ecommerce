@@ -37,7 +37,7 @@ class _SplashScreenState extends State<SplashScreen> {
 
     // Beri waktu sebentar untuk melihat splash screen
     await Future.delayed(
-        const Duration(seconds: 3)); // Tampilkan splash screen selama 3 detik
+        const Duration(seconds: 5)); // Tampilkan splash screen selama 3 detik
 
     if (mounted) {
       // Pastikan widget masih di tree sebelum navigasi
@@ -68,6 +68,7 @@ class _SplashScreenState extends State<SplashScreen> {
           await prefs.setString('user_data',
               jsonEncode(currentUser.toJson())); // Simpan sebagai JSON string
 
+          // ignore: use_build_context_synchronously
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (context) => const HomeScreen()),
@@ -81,6 +82,7 @@ class _SplashScreenState extends State<SplashScreen> {
           await prefs.remove('auth_token'); // Hapus token yang tidak valid
           await prefs
               .remove('user_data'); // <<<<<<<<<< PENTING: Hapus juga user_data
+          // ignore: use_build_context_synchronously
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (context) => const LoginScreen()),
