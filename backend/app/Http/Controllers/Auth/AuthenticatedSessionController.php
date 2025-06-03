@@ -17,13 +17,10 @@ class AuthenticatedSessionController extends Controller
     /**
      * Handle an incoming authentication request.
      */
-    // Ubah return type dari Response menjadi JsonResponse
-    public function store(LoginRequest $request): JsonResponse // <<<<<<<<<< PERBAIKAN DI SINI
+    public function store(LoginRequest $request): JsonResponse
     {
-        // Anda bisa hapus baris Log::info('Password (raw): ...'); di production
         Log::info('Login request received.');
         Log::info('Email: ' . $request->email);
-        // Log::info('Password (raw): ' . $request->password);
 
         if ($request->wantsJson()) {
             Log::info('Request wants JSON (from store method).');
@@ -47,36 +44,25 @@ class AuthenticatedSessionController extends Controller
 
         Log::info('User authenticated: ' . $user->email);
         Log::info('Token created.');
-
-        // Pastikan ini mengembalikan JsonResponse
-        return response()->json([ // <<<<<<<<<< PERBAIKAN DI SINI: gunakan response()->json()
+        return response()->json([ 
             'user' => $user,
             'token' => $token,
             'message' => 'Login successful.'
-        ], 200); // Tambahkan status 200 OK secara eksplisit
+        ], 200);
     }
 
     /**
      * Destroy an authenticated session.
      */
-    // Ubah return type dari Response menjadi JsonResponse
-    public function destroy(Request $request): JsonResponse // <<<<<<<<<< PERBAIKAN DI SINI
+    public function destroy(Request $request): JsonResponse
     {
-        // Pastikan pengguna terotentikasi dan memiliki token
         if (Auth::check()) {
-            // Hapus token yang digunakan saat ini
             $request->user()->currentAccessToken()->delete();
 
             return response()->json([
                 'message' => 'Logged out successfully.'
-            ], 200); // Kode status 200 OK untuk sukses
+            ], 200);
         }
-
-        // Jika tidak ada user yang terotentikasi (seharusnya dicegah oleh middleware auth:sanctum)
-        // Namun, jika request datang tanpa token atau token tidak valid, middleware auth:sanctum
-        // akan menangani ini dan mengembalikan 401 sebelum kode ini dieksekusi.
-        // Bagian ini hanya akan tercapai jika Auth::check() entah bagaimana gagal di sini
-        // padahal middleware auth:sanctum sudah lolos.
         return response()->json([
             'message' => 'No authenticated user found or token invalid.'
         ], 401);

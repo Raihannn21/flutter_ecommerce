@@ -6,13 +6,12 @@ use App\Models\Subcategory;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Validation\Rule; // Tambahkan ini
+use Illuminate\Validation\Rule;
 
 class SubcategoryController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        // Opsi untuk filter berdasarkan category_id
         $subcategories = Subcategory::when($request->category_id, function ($query, $categoryId) {
             return $query->where('category_id', $categoryId);
         })->get();
@@ -30,12 +29,11 @@ class SubcategoryController extends Controller
                 'required',
                 'string',
                 'max:50',
-                // Memastikan kombinasi nama dan category_id unik
                 Rule::unique('subcategories')->where(function ($query) use ($request) {
                     return $query->where('category_id', $request->category_id);
                 }),
             ],
-            'category_id' => 'required|integer|exists:categories,id', // Harus ada di tabel categories
+            'category_id' => 'required|integer|exists:categories,id',
         ]);
 
         if ($validator->fails()) {
@@ -84,10 +82,9 @@ class SubcategoryController extends Controller
                 'required',
                 'string',
                 'max:50',
-                // Memastikan kombinasi nama dan category_id unik, kecuali untuk subcategory ini sendiri
                 Rule::unique('subcategories')->where(function ($query) use ($request) {
                     return $query->where('category_id', $request->category_id);
-                })->ignore($subcategory->id), // Ignore ID subcategory ini saat update
+                })->ignore($subcategory->id),
             ],
             'category_id' => 'sometimes|required|integer|exists:categories,id',
         ]);

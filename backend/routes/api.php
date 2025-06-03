@@ -32,7 +32,6 @@ Route::post('/reset-password', [NewPasswordController::class, 'store'])
     ->middleware('guest')
     ->name('password.store');
 
-// mengaktifkan verifikasi email, ini juga akan ada
 Route::get('/verify-email/{id}/{hash}', VerifyEmailController::class)
     ->middleware(['auth', 'signed', 'throttle:6,1'])
     ->name('verification.verify');
@@ -46,56 +45,49 @@ Route::post('/email/verification-notification', function (Request $request) {
 Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])
     ->middleware('auth:sanctum');
 
-// Route untuk Produk
-// Semua user (termasuk non-login) bisa melihat daftar produk
 Route::get('/products', [ProductController::class, 'index']);
 Route::get('/products/{id}', [ProductController::class, 'show']);
 
-// Public Routes for Categories (anyone can view)
 Route::get('/categories', [CategoryController::class, 'index']);
 Route::get('/categories/{id}', [CategoryController::class, 'show']);
 
-// Public Routes for Subcategories (anyone can view, with optional category_id filter)
 Route::get('/subcategories', [SubcategoryController::class, 'index']);
 Route::get('/subcategories/{id}', [SubcategoryController::class, 'show']);
 
-// Public Routes for Product Types (anyone can view, with optional subcategory_id filter)
 Route::get('/product-types', [ProductTypeController::class, 'index']);
 Route::get('/product-types/{id}', [ProductTypeController::class, 'show']);
 
-// Public Routes for Colours (anyone can view)
 Route::get('/colours', [ColourController::class, 'index']);
 Route::get('/colours/{id}', [ColourController::class, 'show']);
 
-// Public Routes for Usages (anyone can view)
 Route::get('/usages', [UsageController::class, 'index']);
 Route::get('/usages/{id}', [UsageController::class, 'show']);
 
-// Route untuk Admin saja
+// Route untuk Admin
 Route::middleware(['auth:sanctum', 'admin'])->group(function () {
-    // Admin bisa menambah produk
+
     Route::post('/admin/products', [ProductController::class, 'store']);
-     // Admin bisa memperbarui produk
+
     Route::put('/admin/products/{id}', [ProductController::class, 'update']); 
-    // Admin bisa menghapus produk
+
     Route::delete('/admin/products/{id}', [ProductController::class, 'destroy']);
-    //route category 
+
     Route::post('/admin/categories', [CategoryController::class, 'store']);
     Route::put('/admin/categories/{id}', [CategoryController::class, 'update']);
     Route::delete('/admin/categories/{id}', [CategoryController::class, 'destroy']);
-    //route subcategoories
+
     Route::post('/admin/subcategories', [SubcategoryController::class, 'store']);
     Route::put('/admin/subcategories/{id}', [SubcategoryController::class, 'update']);
     Route::delete('/admin/subcategories/{id}', [SubcategoryController::class, 'destroy']);
-    //route subcategoories
+
     Route::post('/admin/product-types', [ProductTypeController::class, 'store']);
     Route::put('/admin/product-types/{id}', [ProductTypeController::class, 'update']);
     Route::delete('/admin/product-types/{id}', [ProductTypeController::class, 'destroy']);
-    //route coloours
+
     Route::post('/admin/colours', [ColourController::class, 'store']);
     Route::put('/admin/colours/{id}', [ColourController::class, 'update']);
     Route::delete('/admin/colours/{id}', [ColourController::class, 'destroy']);
-    //route ussage
+
     Route::post('/admin/usages', [UsageController::class, 'store']);
     Route::put('/admin/usages/{id}', [UsageController::class, 'update']);
     Route::delete('/admin/usages/{id}', [UsageController::class, 'destroy']);
