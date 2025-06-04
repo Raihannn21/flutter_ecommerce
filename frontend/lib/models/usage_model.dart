@@ -1,4 +1,3 @@
-// lib/models/usage_model.dart
 class Usage {
   final int id;
   final String name;

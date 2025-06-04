@@ -1,4 +1,3 @@
-// lib/models/category_model.dart
 class ProductCategory {
   // Menggunakan ProductCategory untuk menghindari konflik nama
   final int id;

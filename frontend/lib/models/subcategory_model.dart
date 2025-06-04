@@ -1,5 +1,5 @@
-// lib/models/subcategory_model.dart
-import 'category_model.dart'; // Penting: Pastikan ini mengimpor category_model.dart
+// ignore: unused_import
+import 'category_model.dart';
 
 class Subcategory {
   final int id;

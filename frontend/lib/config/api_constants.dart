@@ -1,7 +1,5 @@
-// lib/config/api_constants.dart
 class ApiConstants {
-  static const String baseUrl =
-      'http://10.0.2.2:8000/api'; // Pastikan ini sesuai dengan server Laravel Anda (emulator)
+  static const String baseUrl = 'http://10.0.2.2:8000/api';
 
   // --- Endpoint Autentikasi ---
   static const String registerEndpoint = '$baseUrl/register';

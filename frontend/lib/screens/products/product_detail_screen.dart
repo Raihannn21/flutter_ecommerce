@@ -55,9 +55,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     // String tempGenderName = 'Unknown Gender'; // Jika digunakan
 
     // 1. Cari Colour dan Usage (Langsung dari product ID)
+    Colour? colour;
     try {
-      Colour? colour =
-          colours.firstWhere((col) => col.id == widget.product.colourId);
+      colour = colours.firstWhere((col) => col.id == widget.product.colourId);
       tempColourName = colour.name;
     } catch (e) {
       if (kDebugMode)
@@ -65,9 +65,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             'ProductDetailScreen: Colour ID ${widget.product.colourId} not found.');
     }
 
+    Usage? usage;
     try {
-      Usage? usage =
-          usages.firstWhere((use) => use.id == widget.product.usageId);
+      usage = usages.firstWhere((use) => use.id == widget.product.usageId);
       tempUsageName = usage.name;
     } catch (e) {
       if (kDebugMode)
@@ -89,11 +89,12 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     }
 
     if (productType != null) {
-      // Jika ProductType ditemukan, cari Subcategory-nya
+      // Pastikan productType tidak null sebelum mengakses subcategoryId
       Subcategory? subcategory;
       try {
+        // Menggunakan productType.subcategoryId karena productType sudah dipastikan tidak null
         subcategory = subcategories
-            .firstWhere((sub) => sub.id == productType?.subcategoryId);
+            .firstWhere((sub) => sub.id == productType!.subcategoryId);
         tempSubcategoryName = subcategory.name;
       } catch (e) {
         if (kDebugMode)
@@ -102,11 +103,12 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       }
 
       if (subcategory != null) {
-        // Jika Subcategory ditemukan, cari Category-nya
+        // Pastikan subcategory tidak null sebelum mengakses categoryId
         ProductCategory? category;
         try {
+          // Menggunakan subcategory.categoryId karena subcategory sudah dipastikan tidak null
           category =
-              categories.firstWhere((cat) => cat.id == subcategory?.categoryId);
+              categories.firstWhere((cat) => cat.id == subcategory!.categoryId);
           tempCategoryName = category.name;
         } catch (e) {
           if (kDebugMode)
@@ -117,8 +119,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     }
 
     // 3. Cari Gender (jika digunakan)
+    // Gender? gender;
     // try {
-    //   Gender? gender = genders.firstWhere((gen) => gen.id == widget.product.genderId);
+    //   gender = genders.firstWhere((gen) => gen.id == widget.product.genderId);
     //   tempGenderName = gender.name;
     // } catch (e) {
     //   if (kDebugMode) print('ProductDetailScreen: Gender ID ${widget.product.genderId} not found.');

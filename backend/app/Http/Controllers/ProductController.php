@@ -3,11 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\Product;
-use App\Models\Subcategory; // Tambahkan ini
-use App\Models\ProductType; // Tambahkan ini
+use App\Models\Subcategory;
+use App\Models\ProductType; 
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Log; // Untuk debugging
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 
 class ProductController extends Controller

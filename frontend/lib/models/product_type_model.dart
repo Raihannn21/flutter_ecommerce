@@ -1,4 +1,4 @@
-// lib/models/product_type_model.dart
+// ignore: unused_import
 import 'subcategory_model.dart'; // Pastikan ini mengimpor subcategory_model.dart
 
 class ProductTypeModel {

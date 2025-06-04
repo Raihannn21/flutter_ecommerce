@@ -1,4 +1,3 @@
-// lib/models/colour_model.dart
 class Colour {
   final int id;
   final String name;
