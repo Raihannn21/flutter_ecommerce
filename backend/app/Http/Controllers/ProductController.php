@@ -3,29 +3,29 @@
 namespace App\Http\Controllers;
 
 use App\Models\Product;
+use App\Models\Subcategory; // Tambahkan ini
+use App\Models\ProductType; // Tambahkan ini
 use Illuminate\Http\Request;
-use Illuminate\Http\JsonResponse; // Pastikan ini di-import
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Log; // Untuk debugging
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Facades\Log; // Jika masih perlu debugging, bisa dipertahankan
 
 class ProductController extends Controller
 {
     /**
-     * Display a listing of the products.
+     * Display a listing of the products (standard pagination, no search here).
      * Endpoint: GET /api/products
-     * Akses: Publik (User & Admin)
+     * Akses: Publik
      */
     public function index(Request $request): JsonResponse
     {
-        // <<<<<<<<<< PERBAIKAN DI SINI UNTUK PAGINATION
-        $perPage = $request->query('per_page', 20); // Ambil per_page dari query param, default 20 produk per halaman
-        $products = Product::paginate($perPage); // Gunakan paginate()
+        $perPage = $request->query('per_page', 20);
+        $products = Product::paginate($perPage);
 
-        // Mengembalikan respons JSON dengan data produk dan metadata pagination
         return response()->json([
             'message' => 'Products retrieved successfully.',
-            'data' => $products->items(), // Mengambil hanya item data dari paginator
-            'pagination' => [ // Menambahkan metadata pagination
+            'data' => $products->items(),
+            'pagination' => [
                 'total' => $products->total(),
                 'per_page' => $products->perPage(),
                 'current_page' => $products->currentPage(),
@@ -34,13 +34,131 @@ class ProductController extends Controller
                 'to' => $products->lastItem(),
             ]
         ], 200);
-        // <<<<<<<<<< AKHIR PERBAIKAN
+    }
+
+    /**
+     * Perform a binary search for products by subcategory name.
+     * This method demonstrates the binary search algorithm on a sorted collection in PHP.
+     * Endpoint: GET /api/products/search-by-subcategory-binary?query={searchQuery}&page={page}&per_page={perPage}
+     * Akses: Publik (untuk demonstrasi)
+     *
+     * WARNING: This approach fetches ALL subcategories and products to memory and sorts them in PHP.
+     * It is NOT scalable for large databases. For production, use database's LIKE/ILIKE operators.
+     */
+    public function binarySearchProductsBySubcategoryName(Request $request): JsonResponse
+    {
+        $searchQuery = strtolower($request->query('query', ''));
+        $page = (int) $request->query('page', 1);
+        $perPage = (int) $request->query('per_page', 20);
+
+        Log::info('Binary Search Products by Subcategory: Searching for query "' . $searchQuery . '"');
+
+        $allSubcategories = Subcategory::all(['id', 'name'])->sortBy('name')->values()->toArray();
+
+        $matchingSubcategoryIds = [];
+        $subcatSearchSteps = 0;
+
+        if (!empty($searchQuery)) {
+            $low = 0;
+            $high = count($allSubcategories) - 1;
+            $firstMatchIndex = -1;
+
+            while ($low <= $high) {
+                $subcatSearchSteps++;
+                $mid = floor(($low + $high) / 2);
+                $currentSubcatName = strtolower($allSubcategories[$mid]['name']);
+                if (str_starts_with($currentSubcatName, $searchQuery)) {
+                    $firstMatchIndex = $mid;
+                    $high = $mid - 1;
+                } elseif ($currentSubcatName < $searchQuery) {
+                    $low = $mid + 1;
+                } else {
+                    $high = $mid - 1;
+                }
+            }
+
+            if ($firstMatchIndex != -1) {
+                for ($i = $firstMatchIndex; $i >= 0; $i--) {
+                    if (str_starts_with(strtolower($allSubcategories[$i]['name']), $searchQuery)) {
+                        $matchingSubcategoryIds[] = $allSubcategories[$i]['id'];
+                    } else {
+                        break;
+                    }
+                }
+                for ($i = $firstMatchIndex + 1; $i < count($allSubcategories); $i++) {
+                    if (str_starts_with(strtolower($allSubcategories[$i]['name']), $searchQuery)) {
+                        $matchingSubcategoryIds[] = $allSubcategories[$i]['id'];
+                    } else {
+                        break;
+                    }
+                }
+            }
+        } else {
+            $matchingSubcategoryIds = array_column($allSubcategories, 'id');
+        }
+
+        Log::info('Binary Search Products by Subcategory: Found ' . count($matchingSubcategoryIds) . ' matching subcategory IDs.');
+
+        $matchingProductTypeIds = [];
+        if (!empty($matchingSubcategoryIds)) {
+            $productTypes = ProductType::whereIn('subcategory_id', $matchingSubcategoryIds)->get(['id'])->toArray();
+            $matchingProductTypeIds = array_column($productTypes, 'id');
+        }
+        
+        Log::info('Binary Search Products by Subcategory: Found ' . count($matchingProductTypeIds) . ' matching product type IDs.');
+
+        $allProducts = Product::whereIn('product_type_id', $matchingProductTypeIds)
+                                ->get(['product_id', 'title', 'image_url', 'gender_id', 'product_type_id', 'colour_id', 'usage_id'])
+                                ->toArray();
+
+        usort($allProducts, function ($a, $b) {
+            return strcasecmp($a['title'], $b['title']);
+        });
+
+        $totalFound = count($allProducts);
+        $offset = ($page - 1) * $perPage;
+        $paginatedResults = array_slice($allProducts, $offset, $perPage);
+
+        $lastPage = ceil($totalFound / $perPage);
+        $from = $offset + 1;
+        $to = min($offset + $perPage, $totalFound);
+
+        return response()->json([
+            'message' => 'Products searched by subcategory successfully.',
+            'data' => $paginatedResults,
+            'pagination' => [
+                'total' => $totalFound,
+                'per_page' => $perPage,
+                'current_page' => $page,
+                'last_page' => $lastPage,
+                'from' => $from,
+                'to' => $to,
+            ],
+            'binary_search_steps_subcategory' => $subcatSearchSteps
+        ], 200);
+    }
+
+    /**
+     * Display the specified product.
+     */
+    public function show(string $id): JsonResponse
+    {
+        $product = Product::find($id);
+
+        if (!$product) {
+            return response()->json([
+                'message' => 'Product not found.'
+            ], 404);
+        }
+
+        return response()->json([
+            'message' => 'Product retrieved successfully.',
+            'data' => $product
+        ], 200);
     }
 
     /**
      * Store a newly created product in storage.
-     * Endpoint: POST /api/admin/products
-     * Akses: Admin Saja
      */
     public function store(Request $request): JsonResponse
     {
@@ -69,30 +187,7 @@ class ProductController extends Controller
     }
 
     /**
-     * Display the specified product.
-     * Endpoint: GET /api/products/{id}
-     * Akses: Publik (User & Admin)
-     */
-    public function show(string $id): JsonResponse
-    {
-        $product = Product::find($id);
-
-        if (!$product) {
-            return response()->json([
-                'message' => 'Product not found.'
-            ], 404);
-        }
-
-        return response()->json([
-            'message' => 'Product retrieved successfully.',
-            'data' => $product
-        ], 200);
-    }
-
-    /**
      * Update the specified product in storage.
-     * Endpoint: PUT /api/admin/products/{id}
-     * Akses: Admin Saja
      */
     public function update(Request $request, string $id): JsonResponse
     {
@@ -129,8 +224,6 @@ class ProductController extends Controller
 
     /**
      * Remove the specified product from storage.
-     * Endpoint: DELETE /api/admin/products/{id}
-     * Akses: Admin Saja
      */
     public function destroy(string $id): JsonResponse
     {

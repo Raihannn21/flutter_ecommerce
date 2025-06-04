@@ -45,13 +45,20 @@ Route::post('/email/verification-notification', function (Request $request) {
 Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])
     ->middleware('auth:sanctum');
 
-Route::get('/products', [ProductController::class, 'index']);
+// --- Public Routes (Accessible by anyone) ---
+
+Route::get('/products/search-by-subcategory-binary', [ProductController::class, 'binarySearchProductsBySubcategoryName']);
+
+
+// Products
+Route::get('/products', [ProductController::class, 'index']); 
 Route::get('/products/{id}', [ProductController::class, 'show']);
 
+// Categories
 Route::get('/categories', [CategoryController::class, 'index']);
 Route::get('/categories/{id}', [CategoryController::class, 'show']);
 
-Route::get('/subcategories', [SubcategoryController::class, 'index']);
+Route::get('/subcategories/binary-search-by-id', [SubcategoryController::class, 'binarySearchById']);
 Route::get('/subcategories/{id}', [SubcategoryController::class, 'show']);
 
 Route::get('/product-types', [ProductTypeController::class, 'index']);
@@ -63,13 +70,12 @@ Route::get('/colours/{id}', [ColourController::class, 'show']);
 Route::get('/usages', [UsageController::class, 'index']);
 Route::get('/usages/{id}', [UsageController::class, 'show']);
 
-// Route untuk Admin
+
+// --- Admin Routes (Requires 'admin' role) ---
 Route::middleware(['auth:sanctum', 'admin'])->group(function () {
 
     Route::post('/admin/products', [ProductController::class, 'store']);
-
-    Route::put('/admin/products/{id}', [ProductController::class, 'update']); 
-
+    Route::put('/admin/products/{id}', [ProductController::class, 'update']);
     Route::delete('/admin/products/{id}', [ProductController::class, 'destroy']);
 
     Route::post('/admin/categories', [CategoryController::class, 'store']);

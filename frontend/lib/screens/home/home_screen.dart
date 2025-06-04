@@ -5,17 +5,12 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:frontend/screens/auth/login_screen.dart';
 import 'package:frontend/services/auth_service.dart';
-import 'package:flutter/foundation.dart'; // Import untuk kDebugMode
-import 'dart:convert'; // Import untuk jsonDecode
-import 'package:frontend/models/user.dart'; // Import untuk User model
+import 'package:flutter/foundation.dart';
+import 'dart:convert';
+import 'package:frontend/models/user.dart';
 
-import 'package:frontend/screens/admin/admin_product_screen.dart'; // Import AdminProductScreen
-import 'package:frontend/screens/products/product_detail_screen.dart'; // <<<<<< PENTING: Import ProductDetailScreen
-
-// Hapus import yang tidak diperlukan lagi jika file-nya sudah dihapus
-// import 'package:ecommerce_app/widgets/app_drawer.dart';
-// import 'package:ecommerce_app/screens/category_screen.dart';
-// import 'package:ecommerce_app/screens/profile_screen.dart';
+import 'package:frontend/screens/admin/admin_product_screen.dart';
+import 'package:frontend/screens/products/product_detail_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -36,24 +31,52 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _hasMore = true;
   bool _isFetchingMore = false;
 
-  User? _currentUser; // Variabel untuk menyimpan user yang login
+  User? _currentUser;
+
+  final TextEditingController _searchController = TextEditingController();
+  String _currentSearchQuery = '';
+  bool _isSearching = false;
 
   @override
   void initState() {
     super.initState();
-    _loadCurrentUser(); // Panggil ini untuk memuat user saat HomeScreen dibuat
-    _fetchProducts(); // Panggil ini untuk memuat produk
+    _loadCurrentUser();
+    _fetchProducts();
     _scrollController.addListener(_onScroll);
+
+    // <<<<<<<<<< TAMBAHKAN LISTENER UNTUK SEARCH BAR
+    _searchController.addListener(_onSearchChanged);
+    // <<<<<<<<<< AKHIR TAMBAHAN
   }
 
   @override
   void dispose() {
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
+    // <<<<<<<<<< DISPOSE SEARCH CONTROLLER
+    _searchController.removeListener(_onSearchChanged);
+    _searchController.dispose();
+    // <<<<<<<<<< AKHIR DISPOSE
     super.dispose();
   }
 
-  // Fungsi untuk memuat user yang login dari Shared Preferences
+  // <<<<<<<<<< FUNGSI BARU UNTUK MENDETEKSI PERUBAHAN SEARCH BAR
+  void _onSearchChanged() {
+    // Debounce search input untuk menghindari terlalu banyak request
+    // Ini adalah cara sederhana, untuk yang lebih canggih bisa pakai Timer
+    Future.delayed(const Duration(milliseconds: 500), () {
+      if (_searchController.text != _currentSearchQuery) {
+        // Cek lagi setelah delay
+        setState(() {
+          _currentSearchQuery = _searchController.text;
+          _isSearching = _currentSearchQuery.isNotEmpty;
+        });
+        _fetchProducts(); // Panggil ulang fetchProducts dengan query baru
+      }
+    });
+  }
+  // <<<<<<<<<< AKHIR FUNGSI BARU
+
   Future<void> _loadCurrentUser() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     final String? userDataString = prefs.getString('user_data');
@@ -70,7 +93,6 @@ class _HomeScreenState extends State<HomeScreen> {
         if (kDebugMode) {
           print('HomeScreen: Failed to parse user data from prefs: $e');
         }
-        // Jika gagal parsing, hapus data user yang mungkin rusak
         await prefs.remove('user_data');
       }
     } else {
@@ -81,17 +103,16 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _onScroll() {
-    // Memastikan tidak sedang memuat, ada halaman berikutnya, dan sudah mencapai akhir scroll
     if (_scrollController.position.pixels ==
-                _scrollController.position.maxScrollExtent &&
-            !_isLoading && // Pastikan tidak sedang memuat data awal
-            !_isFetchingMore && // Pastikan tidak sedang memuat lebih banyak data
-            _hasMore // Pastikan ada halaman berikutnya
-        ) {
-      _fetchMoreProducts(); // Panggil fungsi untuk memuat lebih banyak
+            _scrollController.position.maxScrollExtent &&
+        !_isLoading &&
+        !_isFetchingMore &&
+        _hasMore) {
+      _fetchMoreProducts();
     }
   }
 
+  // <<<<<<<<<< PERUBAHAN: Panggil ProductService.binarySearchProductsBySubcategoryName
   Future<void> _fetchProducts() async {
     setState(() {
       _isLoading = true;
@@ -102,14 +123,17 @@ class _HomeScreenState extends State<HomeScreen> {
     });
 
     final response =
-        await _productService.getProducts(page: _currentPage, perPage: 20);
+        await _productService.binarySearchProductsBySubcategoryName(
+      // <<<<<< Panggil metode Binary Search Subcategory
+      page: _currentPage,
+      perPage: 20,
+      searchQuery: _currentSearchQuery, // <<<<<< Kirim query pencarian
+    );
 
     if (mounted) {
       if (response['success']) {
         setState(() {
-          _products = response['data']
-              as List<Product>; // Casting langsung ke List<Product>
-          // Perbarui status _hasMore berdasarkan pagination metadata dari respons Laravel
+          _products = response['data'] as List<Product>;
           _hasMore = response['pagination']?['current_page'] <
               response['pagination']?['last_page'];
           _isLoading = false;
@@ -136,6 +160,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  // <<<<<<<<<< PERUBAHAN: Panggil ProductService.binarySearchProductsBySubcategoryName
   Future<void> _fetchMoreProducts() async {
     if (!_hasMore || _isFetchingMore) return;
 
@@ -143,34 +168,38 @@ class _HomeScreenState extends State<HomeScreen> {
       _isFetchingMore = true;
     });
 
-    _currentPage++; // Tambah nomor halaman
+    _currentPage++;
     final response =
-        await _productService.getProducts(page: _currentPage, perPage: 20);
+        await _productService.binarySearchProductsBySubcategoryName(
+      // <<<<<< Panggil metode Binary Search Subcategory
+      page: _currentPage,
+      perPage: 20,
+      searchQuery: _currentSearchQuery, // <<<<<< Kirim query pencarian
+    );
 
     if (mounted) {
       setState(() {
-        _isFetchingMore = false; // Reset status loading
+        _isFetchingMore = false;
         if (response['success']) {
-          _products.addAll(response['data']
-              as List<Product>); // Tambahkan ke daftar yang sudah ada
+          _products.addAll(response['data'] as List<Product>);
           _hasMore = response['pagination']?['current_page'] <
               response['pagination']?['last_page'];
         } else {
-          // Jika gagal memuat lebih banyak, tampilkan snackbar kecil
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
                 content: Text(
                     response['message'] ?? 'Failed to load more products.')),
           );
-          _currentPage--; // Kembalikan halaman jika gagal agar bisa coba lagi
+          _currentPage--;
         }
       });
     }
   }
+  // <<<<<<<<<< AKHIR PERUBAHAN
 
   Future<void> _logout() async {
     setState(() {
-      _isLoading = true; // Set loading state saat logout
+      _isLoading = true;
     });
 
     final SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -179,8 +208,8 @@ class _HomeScreenState extends State<HomeScreen> {
     if (token != null) {
       final response = await _authService.logout(token);
       if (response['success']) {
-        await prefs.remove('auth_token'); // Hapus token dari SharedPreferences
-        await prefs.remove('user_data'); // Hapus juga user data
+        await prefs.remove('auth_token');
+        await prefs.remove('user_data');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Logged out successfully!')),
@@ -198,7 +227,6 @@ class _HomeScreenState extends State<HomeScreen> {
         }
       }
     } else {
-      // Jika token null saat coba logout
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('No active session to log out.')),
@@ -213,13 +241,11 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  // Widget terpisah untuk Grid Produk, agar kode lebih rapi
   Widget _buildProductGrid() {
-    if (_isLoading && _products.isEmpty) {
-      // Ini untuk loading awal
+    if (_isLoading && _products.isEmpty && _currentSearchQuery.isEmpty) {
+      // Tambah kondisi untuk search
       return const Center(child: CircularProgressIndicator());
     } else if (_errorMessage != null) {
-      // Jika ada error
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -233,35 +259,35 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       );
     } else if (_products.isEmpty && !_isLoading) {
-      // Jika tidak ada produk
-      return const Center(
-        child: Text('No products found. Please add some from admin panel.'),
+      // Jika tidak ada produk dan tidak loading
+      return Center(
+        // Tambah Center untuk pesan ini
+        child: Text(
+          _currentSearchQuery.isEmpty
+              ? 'No products found. Please add some from admin panel.'
+              : 'No products found for "${_currentSearchQuery}".', // Pesan jika hasil search kosong
+        ),
       );
     } else {
       return GridView.builder(
-        controller:
-            _scrollController, // Menggunakan scrollController untuk infinite scroll
+        controller: _scrollController,
         padding: const EdgeInsets.all(8.0),
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2, // 2 kolom per baris
-          childAspectRatio: 0.7, // Rasio lebar/tinggi item
+          crossAxisCount: 2,
+          childAspectRatio: 0.7,
           crossAxisSpacing: 8.0,
           mainAxisSpacing: 8.0,
         ),
-        itemCount: _products.length +
-            (_hasMore
-                ? 1
-                : 0), // Tambahkan 1 item untuk loading indicator/footer
+        itemCount: _products.length + (_hasMore ? 1 : 0),
         itemBuilder: (context, index) {
           if (index == _products.length) {
             // Ini adalah item terakhir, tampilkan loading atau pesan "No more products"
             return _isFetchingMore
                 ? const Center(child: CircularProgressIndicator())
                 : Center(
-                    child:
-                        _hasMore // Seharusnya tidak tercapai jika hasMore false dan tidak fetching
-                            ? const Text('Loading more...')
-                            : const Text('No more products to load.'),
+                    child: _hasMore
+                        ? const Text('Loading more...')
+                        : const Text('No more products to load.'),
                   );
           }
 
@@ -272,17 +298,13 @@ class _HomeScreenState extends State<HomeScreen> {
               borderRadius: BorderRadius.circular(12.0),
             ),
             child: InkWell(
-              // Membuat kartu bisa diklik
               onTap: () {
-                // <<<<<<<<<< PERBAIKAN DI SINI: AKTIFKAN NAVIGASI
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => ProductDetailScreen(
-                        product: product), // Meneruskan objek product
+                    builder: (context) => ProductDetailScreen(product: product),
                   ),
                 );
-                // <<<<<<<<<< AKHIR PERBAIKAN
               },
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -292,7 +314,6 @@ class _HomeScreenState extends State<HomeScreen> {
                       borderRadius: const BorderRadius.vertical(
                           top: Radius.circular(12.0)),
                       child: CachedNetworkImage(
-                        // Menggunakan CachedNetworkImage
                         imageUrl: product.imageUrl,
                         fit: BoxFit.cover,
                         placeholder: (context, url) => const Center(
@@ -309,9 +330,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       children: [
                         Text(
                           product.title,
-                          maxLines: 2, // Batasi 2 baris
-                          overflow: TextOverflow
-                              .ellipsis, // Tambahkan ... jika terlalu panjang
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 16.0,
@@ -319,13 +339,12 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         const SizedBox(height: 4.0),
                         Text(
-                          'Product ID: ${product.productId}', // Contoh detail
+                          'Product ID: ${product.productId}',
                           style: TextStyle(
                             fontSize: 12.0,
                             color: Colors.grey[600],
                           ),
                         ),
-                        // TODO: Tampilkan harga, kategori, dll.
                       ],
                     ),
                   ),
@@ -342,21 +361,58 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('E-commerce App'), // Judul tetap
-        automaticallyImplyLeading: false, // Menghilangkan tombol back
+        title: _isSearching // Tampilkan search bar atau judul
+            ? TextField(
+                controller: _searchController,
+                decoration: InputDecoration(
+                  hintText: 'Search subcategories...', // <<<<<< UBAH HINT TEXT
+                  hintStyle: const TextStyle(color: Colors.white70),
+                  border: InputBorder.none,
+                  suffixIcon: _searchController.text.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.clear, color: Colors.white),
+                          onPressed: () {
+                            _searchController.clear();
+                            setState(() {
+                              _currentSearchQuery = '';
+                              _isSearching = false;
+                            });
+                            _fetchProducts(); // Muat ulang semua produk
+                          },
+                        )
+                      : null,
+                ),
+                style: const TextStyle(color: Colors.white, fontSize: 18),
+                cursorColor: Colors.white,
+              )
+            : const Text('E-commerce App'),
+        automaticallyImplyLeading: false,
         actions: [
+          // Tombol Search (untuk mengaktifkan/menonaktifkan search bar)
+          IconButton(
+            icon: Icon(_isSearching ? Icons.close : Icons.search),
+            onPressed: () {
+              setState(() {
+                _isSearching = !_isSearching;
+                if (!_isSearching) {
+                  // Jika search bar ditutup, bersihkan query dan refresh
+                  _searchController.clear();
+                  _currentSearchQuery = '';
+                  _fetchProducts();
+                }
+              });
+            },
+          ),
           // Tombol Admin Panel, hanya jika user adalah Admin
           if (_currentUser != null && _currentUser!.isAdmin)
             IconButton(
               icon: const Icon(Icons.admin_panel_settings),
               onPressed: () {
-                // Navigasi ke AdminProductScreen
                 Navigator.push(
                   context,
                   MaterialPageRoute(
                       builder: (context) => const AdminProductScreen()),
                 ).then((value) {
-                  // Refresh produk setelah kembali dari AdminProductScreen jika ada perubahan
                   if (value == true) {
                     _fetchProducts();
                   }
@@ -373,7 +429,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      body: _buildProductGrid(), // Langsung tampilkan Grid Produk
+      body: _buildProductGrid(),
     );
   }
 }

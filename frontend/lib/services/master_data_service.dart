@@ -1,20 +1,17 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:flutter/foundation.dart'; // Untuk kDebugMode
+import 'package:flutter/foundation.dart';
 import '../config/api_constants.dart';
-import '../models/category_model.dart'; // Penting: Menggunakan category_model.dart
-import '../models/subcategory_model.dart'; // Penting: Menggunakan subcategory_model.dart
-import '../models/product_type_model.dart'; // Penting: Menggunakan product_type_model.dart
-import '../models/colour_model.dart'; // Penting: Menggunakan colour_model.dart
-import '../models/usage_model.dart'; // Penting: Menggunakan usage_model.dart
-// import '../models/gender_model.dart'; // Tetap di-comment jika tidak digunakan
+import '../models/category_model.dart';
+import '../models/subcategory_model.dart';
+import '../models/product_type_model.dart';
+import '../models/colour_model.dart';
+import '../models/usage_model.dart';
 
 class MasterDataService {
-  // Helper untuk menangani respons API
   Map<String, dynamic> _handleResponse(http.Response response) {
     if (kDebugMode) {
       print('MasterData API Response Status Code: ${response.statusCode}');
-      // <<<<<<<<<< PENTING: Print seluruh body untuk debugging
       print(
           'MasterData API Response FULL Body (Untruncated): ${response.body}');
     }
@@ -22,14 +19,12 @@ class MasterDataService {
     if (response.statusCode >= 200 && response.statusCode < 300) {
       if (response.body.isNotEmpty) {
         try {
-          // <<<<<<<<<< TAMBAHKAN TRY-CATCH DI SINI UNTUK DECODE
           final Map<String, dynamic> jsonResponse = jsonDecode(response.body);
-          // Pastikan ada key 'data' dan itu adalah List
           if (jsonResponse.containsKey('data') &&
               jsonResponse['data'] is List) {
             return {
               'success': true,
-              'data': jsonResponse['data'], // Ambil langsung array 'data'
+              'data': jsonResponse['data'],
               'statusCode': response.statusCode,
             };
           } else {
@@ -60,10 +55,9 @@ class MasterDataService {
           };
         }
       } else {
-        // Handle 204 No Content atau body kosong
         return {
           'success': true,
-          'data': [], // Jika body kosong, kembalikan list kosong
+          'data': [],
           'statusCode': response.statusCode,
           'message': 'No content',
         };
@@ -98,7 +92,6 @@ class MasterDataService {
         headers: {'Accept': 'application/json'});
     final handledResponse = _handleResponse(response);
     if (handledResponse['success']) {
-      // Pastikan handledResponse['data'] adalah List<dynamic> sebelum map
       return (handledResponse['data'] as List<dynamic>)
           .map((json) => ProductCategory.fromJson(json))
           .toList();
@@ -161,4 +154,53 @@ class MasterDataService {
     }
     return [];
   }
+
+  // <<<<<<<<<< TAMBAHAN: Metode untuk memanggil Binary Search API Subcategory
+  Future<Map<String, dynamic>> binarySearchSubcategoryById(int id) async {
+    final response = await http.get(
+      Uri.parse(
+          '${ApiConstants.baseUrl}/subcategories/binary-search-by-id?id=$id'),
+      headers: {
+        'Accept': 'application/json',
+      },
+    );
+
+    if (kDebugMode) {
+      print('Binary Search API Response Status Code: ${response.statusCode}');
+      print('Binary Search API Response Body: ${response.body}');
+    }
+
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> jsonResponse = jsonDecode(response.body);
+      return {
+        'success': true,
+        'data': Subcategory.fromJson(
+            jsonResponse['data']), // Parse Subcategory object
+        'message': jsonResponse['message'] ?? 'Subcategory found.',
+        'search_steps': jsonResponse['search_steps'],
+      };
+    } else {
+      try {
+        final Map<String, dynamic> errorBody = jsonDecode(response.body);
+        return {
+          'success': false,
+          'message': errorBody['message'] ?? 'Subcategory not found.',
+          'search_steps': errorBody[
+              'search_steps'], // Ambil langkah dari error response juga
+        };
+      } catch (e) {
+        if (kDebugMode) {
+          print('Binary Search API Error parsing response as JSON: $e');
+        }
+        return {
+          'success': false,
+          'message':
+              'Failed to parse API response. Status Code: ${response.statusCode}. Raw body: ${response.body}',
+          'statusCode': response.statusCode,
+          'body': response.body,
+        };
+      }
+    }
+  }
+  // <<<<<<<<<< AKHIR TAMBAHAN
 }
