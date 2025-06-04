@@ -20,25 +20,64 @@ class ProductService {
 
     if (kDebugMode) {
       print('Products API Response Status Code: ${response.statusCode}');
-      print('Products API Response Body: ${response.body}');
+      print('Products API Response FULL Body (Untruncated): ${response.body}');
     }
 
     if (response.statusCode == 200) {
-      final Map<String, dynamic> jsonResponse = jsonDecode(response.body);
+      try {
+        final Map<String, dynamic> jsonResponse = jsonDecode(response.body);
 
-      List<dynamic> productJsonList = jsonResponse['data'];
-      List<Product> products =
-          productJsonList.map((json) => Product.fromJson(json)).toList();
+        if (!jsonResponse.containsKey('data') ||
+            !(jsonResponse['data'] is List)) {
+          if (kDebugMode) {
+            print(
+                'ProductService Error: API response "data" key is missing or not a list.');
+          }
+          return {
+            'success': false,
+            'message':
+                'Invalid API response structure: "data" key missing or not a list.',
+            'statusCode': response.statusCode,
+            'body': response.body,
+          };
+        }
 
-      Map<String, dynamic> paginationMeta = jsonResponse['pagination'] ?? {};
+        List<dynamic> productJsonList = jsonResponse['data'];
+        List<Product> products = [];
+        for (var item in productJsonList) {
+          try {
+            products.add(Product.fromJson(item));
+          } catch (e) {
+            if (kDebugMode) {
+              print(
+                  'ProductService Error: Failed to parse single product item: $item, Error: $e');
+            }
+          }
+        }
 
-      return {
-        'success': true,
-        'data': products,
-        'pagination': paginationMeta,
-        'message':
-            jsonResponse['message'] ?? 'Products retrieved successfully.',
-      };
+        Map<String, dynamic> paginationMeta = jsonResponse['pagination'] ?? {};
+
+        return {
+          'success': true,
+          'data': products,
+          'pagination': paginationMeta,
+          'message':
+              jsonResponse['message'] ?? 'Products retrieved successfully.',
+        };
+      } catch (e) {
+        if (kDebugMode) {
+          print(
+              'ProductService Error: Failed to decode or parse JSON response. Error: $e');
+          print(
+              'ProductService Error: Raw response body that caused error: ${response.body}');
+        }
+        return {
+          'success': false,
+          'message': 'Failed to parse API response JSON. Error: $e',
+          'statusCode': response.statusCode,
+          'body': response.body,
+        };
+      }
     } else {
       try {
         final Map<String, dynamic> errorBody = jsonDecode(response.body);
@@ -46,15 +85,18 @@ class ProductService {
           'success': false,
           'message': errorBody['message'] ?? 'Failed to retrieve products.',
           'errors': errorBody['errors'],
+          'statusCode': response.statusCode,
         };
       } catch (e) {
         if (kDebugMode) {
-          print('Error parsing products response as JSON: $e');
+          print(
+              'ProductService Error: Failed to parse non-200 error response as JSON: $e');
         }
         return {
           'success': false,
           'message':
-              'Failed to parse API response. Status Code: ${response.statusCode}. Raw body: ${response.body}',
+              'Failed to parse API error response. Status Code: ${response.statusCode}. Raw body: ${response.body}',
+          'statusCode': response.statusCode,
           'body': response.body,
         };
       }
@@ -76,13 +118,27 @@ class ProductService {
     }
 
     if (response.statusCode == 200) {
-      final Map<String, dynamic> jsonResponse = jsonDecode(response.body);
-      Product product = Product.fromJson(jsonResponse['data']);
-      return {
-        'success': true,
-        'data': product,
-        'message': jsonResponse['message'] ?? 'Product retrieved successfully.',
-      };
+      try {
+        final Map<String, dynamic> jsonResponse = jsonDecode(response.body);
+        Product product = Product.fromJson(jsonResponse['data']);
+        return {
+          'success': true,
+          'data': product,
+          'message':
+              jsonResponse['message'] ?? 'Product retrieved successfully.',
+        };
+      } catch (e) {
+        if (kDebugMode) {
+          print(
+              'ProductService Error: Failed to parse product detail JSON: $e');
+        }
+        return {
+          'success': false,
+          'message': 'Failed to parse product detail API response. Error: $e',
+          'statusCode': response.statusCode,
+          'body': response.body,
+        };
+      }
     } else {
       try {
         final Map<String, dynamic> errorBody = jsonDecode(response.body);
@@ -91,15 +147,18 @@ class ProductService {
           'message':
               errorBody['message'] ?? 'Failed to retrieve product detail.',
           'errors': errorBody['errors'],
+          'statusCode': response.statusCode,
         };
       } catch (e) {
         if (kDebugMode) {
-          print('Error parsing product detail response as JSON: $e');
+          print(
+              'ProductService Error: Failed to parse non-200 product detail error response: $e');
         }
         return {
           'success': false,
           'message':
-              'Failed to parse API response. Status Code: ${response.statusCode}. Raw body: ${response.body}',
+              'Failed to parse API error response. Status Code: ${response.statusCode}. Raw body: ${response.body}',
+          'statusCode': response.statusCode,
           'body': response.body,
         };
       }

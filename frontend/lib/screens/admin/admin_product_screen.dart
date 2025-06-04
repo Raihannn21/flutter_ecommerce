@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:frontend/services/product_service.dart';
-import 'package:frontend/models/product.dart';
+import 'package:frontend/services/product_service.dart'; // Import ProductService
+import 'package:frontend/models/product.dart'; // Import model Product
 import 'package:cached_network_image/cached_network_image.dart';
-// ignore: unused_import
-import 'package:flutter/foundation.dart';
-import 'package:frontend/screens/admin/admin_product_form_screen.dart';
-import 'package:shared_preferences/shared_preferences.dart'; // Akan kita buat nanti
+import 'package:flutter/foundation.dart'; // Untuk kDebugMode
+import 'package:frontend/screens/admin/admin_product_form_screen.dart'; // Import AdminProductFormScreen
+import 'package:shared_preferences/shared_preferences.dart'; // Untuk mendapatkan token admin
 
 class AdminProductScreen extends StatefulWidget {
   const AdminProductScreen({super.key});
@@ -130,16 +129,10 @@ class _AdminProductScreenState extends State<AdminProductScreen> {
     );
 
     if (confirmDelete == true) {
-      // TODO: Perlu token admin untuk delete
-      // Untuk saat ini, kita akan melewati token dari AuthService atau Provider
-      // Ini akan kita tangani lebih baik dengan manajemen state global nanti.
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Deleting product...')),
       );
-      // Placeholder untuk token admin. Ini harusnya dari SharedPreferences.
-      // Kita akan buat fungsi helper untuk mendapatkan token dari SharedPreferences.
-      String? adminToken =
-          await _getAdminTokenFromPrefs(); // Fungsi helper baru
+      String? adminToken = await _getAdminTokenFromPrefs();
 
       if (adminToken != null) {
         final response = await _productService.deleteProduct(
@@ -168,7 +161,6 @@ class _AdminProductScreenState extends State<AdminProductScreen> {
     }
   }
 
-  // Fungsi helper untuk mendapatkan token admin dari SharedPreferences
   Future<String?> _getAdminTokenFromPrefs() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     return prefs.getString('auth_token');
@@ -289,11 +281,9 @@ class _AdminProductScreenState extends State<AdminProductScreen> {
                                         color: Colors.grey[600],
                                       ),
                                     ),
-                                    // TODO: Tampilkan harga, kategori, dll.
                                   ],
                                 ),
                               ),
-                              // <<<<<<<<<< TOMBOL AKSI ADMIN
                               ButtonBar(
                                 alignment: MainAxisAlignment.spaceAround,
                                 children: [
@@ -310,7 +300,6 @@ class _AdminProductScreenState extends State<AdminProductScreen> {
                                   ),
                                 ],
                               ),
-                              // <<<<<<<<<< AKHIR TOMBOL AKSI
                             ],
                           ),
                         );

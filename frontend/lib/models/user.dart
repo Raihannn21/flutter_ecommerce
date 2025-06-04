@@ -41,5 +41,5 @@ class User {
     };
   }
 
-  bool get isAdmin => role == 'admin';
+  bool get isAdmin => role == 'admin'; // Getter helper untuk cek role admin
 }
